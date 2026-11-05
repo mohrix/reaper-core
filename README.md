@@ -46,8 +46,8 @@ Stop using slow, single-threaded scanners. Reaper scans multiple IPs concurrentl
 
 ## 📸 Screenshots
 
-*(Upload your terminal screenshot here and replace this text)*
-`<img src="https://via.placeholder.com/800x400/111318/00FF41?text=Reaper+Terminal+Output" alt="Terminal Output" width="100%">`
+*(Upload your terminal screenshot to GitHub Issues, copy the link, and paste it here)*
+<img src="https://via.placeholder.com/800x400/111318/00FF41?text=Reaper+Terminal+Output" alt="Terminal Output" width="100%">
 
 ---
 
