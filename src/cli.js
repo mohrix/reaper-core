@@ -20,12 +20,12 @@ program
     .option('-o, --output <file>', 'Save JSON output')
     .option('-t, --timeout <ms>', 'Timeout per port in ms', '1500')
     .action(async (target, wordlist, options) => {
-        console.log(chalk.cyan(\`
+        console.log(chalk.cyan(`
     ╔══════════════════════════════════════╗
     ║        REAPER CORE - v4.0.0          ║
     ║     Ultimate Recon Framework         ║
     ╚══════════════════════════════════════╝
-        \`));
+        `));
         await runScan(target, wordlist, options);
     });
 

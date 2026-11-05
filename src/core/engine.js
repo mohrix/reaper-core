@@ -14,22 +14,22 @@ async function runScan(target, wordlist, options) {
         try {
             const content = fs.readFileSync(wordlist, 'utf8');
             credsList = content.split('\n').map(l => l.trim()).filter(l => l && l.includes(':'));
-            console.log(chalk.cyan(\`[*] Loaded \${credsList.length} credentials.\`));
-        } catch (e) { console.log(chalk.red(\`[-] Could not read wordlist.\`)); }
+            console.log(chalk.cyan(`[*] Loaded ${credsList.length} credentials.`));
+        } catch (e) { console.log(chalk.red(`[-] Could not read wordlist.`)); }
     }
 
     let targets = [];
     if (!net.isIP(target) && !target.includes('/') && !target.includes('-')) {
-        const spinner = ora(\`Resolving \${target}...\`).start();
+        const spinner = ora(`Resolving ${target}...`).start();
         const address = await new Promise(res => dns.lookup(target, (err, addr) => res(err ? null : addr)));
         if (!address) { spinner.fail('Resolution failed.'); return; }
-        spinner.succeed(\`Resolved to \${address}\`);
+        spinner.succeed(`Resolved to ${address}`);
         targets = [address];
     } else {
         targets = expandTargets(target);
     }
 
-    console.log(chalk.magenta(\`[*] Total Targets: \${targets.length}\`));
+    console.log(chalk.magenta(`[*] Total Targets: ${targets.length}`));
     
     let portsToScan = [21, 22, 23, 80, 443, 3389, 3306, 5432, 554, 5555, 6379, 8080, 8081];
     if (options.ports) {
@@ -44,7 +44,7 @@ async function runScan(target, wordlist, options) {
         return { ip, open };
     });
 
-    const spinner = ora(\`Scanning with speed...\`).start();
+    const spinner = ora(`Scanning with speed...`).start();
     const scanResults = await runWithConcurrency(scanTasks, 50);
     spinner.stop();
 
@@ -66,7 +66,7 @@ async function runScan(target, wordlist, options) {
 
     displayTable(finalResults);
     if (options.output) fs.writeFileSync(options.output, JSON.stringify(finalResults, null, 2));
-    if (options.report) { generateHtmlReport(finalResults, options.report); console.log(chalk.green(\`\\n[+] Report saved to \${options.report}\`)); }
+    if (options.report) { generateHtmlReport(finalResults, options.report); console.log(chalk.green(`\\n[+] Report saved to ${options.report}`)); }
 }
 
 module.exports = { runScan };

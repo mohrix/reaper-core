@@ -13,7 +13,7 @@ function expandTargets(input) {
         if (parseInt(mask) < 24) return [ip];
         const parts = ip.split('.').map(Number);
         const targets = [];
-        for (let i = 1; i < 255; i++) targets.push(\`\${parts[0]}.\${parts[1]}.\${parts[2]}.\${i}\`);
+        for (let i = 1; i < 255; i++) targets.push(`${parts[0]}.${parts[1]}.${parts[2]}.${i}`);
         return targets;
     }
     if (input.includes('-')) {
@@ -21,7 +21,7 @@ function expandTargets(input) {
         const startParts = start.split('.').map(Number);
         const endVal = parseInt(end);
         const targets = [];
-        for (let i = startParts[3]; i <= endVal; i++) targets.push(\`\${startParts[0]}.\${startParts[1]}.\${startParts[2]}.\${i}\`);
+        for (let i = startParts[3]; i <= endVal; i++) targets.push(`${startParts[0]}.${startParts[1]}.${startParts[2]}.${i}`);
         return targets;
     }
     return [input];

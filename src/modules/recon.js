@@ -9,7 +9,7 @@ function checkRTSP(ip) {
         const promises = RTSP_PATHS.map(path => {
             return withTimeout(new Promise((res) => {
                 const client = new net.Socket();
-                const req = \`DESCRIBE rtsp://\${ip}:554\${path} RTSP/1.0\\r\\nCSeq: 1\\r\\n\\r\\n\`;
+                const req = `DESCRIBE rtsp://${ip}:554${path} RTSP/1.0\\r\\nCSeq: 1\\r\\n\\r\\n`;
                 client.connect(554, ip, () => client.write(req));
                 let data = '';
                 client.on('data', (chunk) => { data += chunk.toString(); });

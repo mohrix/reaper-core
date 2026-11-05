@@ -4,10 +4,10 @@ const { withTimeout } = require('./utils');
 
 function getGeoIP(ip) {
     return withTimeout(new Promise((resolve) => {
-        http.get(\`http://ip-api.com/json/\${ip}\`, (res) => {
+        http.get(`http://ip-api.com/json/${ip}`, (res) => {
             let data = ''; res.on('data', chunk => data += chunk);
             res.on('end', () => {
-                try { const json = JSON.parse(data); resolve(json.status === 'success' ? \`\${json.country} | \${json.city} | \${json.isp}\` : null); } catch { resolve(null); }
+                try { const json = JSON.parse(data); resolve(json.status === 'success' ? `${json.country} | ${json.city} | ${json.isp}` : null); } catch { resolve(null); }
             });
         }).on('error', () => resolve(null));
     }), 3000).catch(() => null);
