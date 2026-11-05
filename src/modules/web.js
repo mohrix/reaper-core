@@ -16,7 +16,7 @@ function getHttpInfo(ip, port, isHttps = false) {
                 if (server.toLowerCase().includes('ipcamera') || data.toLowerCase().includes('dahua')) device = "IP Camera 🎥";
                 if (server.toLowerCase().includes('iis')) device = "Windows Server 🖥️";
                 const isLogin = data.toLowerCase().includes('<input type="password"') || data.toLowerCase().includes('type="password"');
-                const titleMatch = data.match(/<title>(.*?)<\\/title>/i);
+                const titleMatch = data.match(/<title>(.*?)<\/title>/i);
                 const title = titleMatch ? titleMatch[1].trim().substring(0, 30) : 'No Title';
                 resolve({ server, title, status: res.statusCode, device, isLogin, rawData: data });
             });
@@ -80,8 +80,8 @@ async function bruteForceFtp(ip, credsList) {
             let step = 0;
             client.on('data', (data) => {
                 const resp = data.toString();
-                if (step === 0 && resp.includes('220')) { client.write(`USER ${u}\\r\\n`); step++; }
-                else if (step === 1 && resp.includes('331')) { client.write(`PASS ${p}\\r\\n`); step++; }
+                if (step === 0 && resp.includes('220')) { client.write(`USER ${u}\r\n`); step++; }
+                else if (step === 1 && resp.includes('331')) { client.write(`PASS ${p}\r\n`); step++; }
                 else if (step === 2) { resolve(resp.includes('230')); client.destroy(); }
             });
             client.on('error', () => { client.destroy(); resolve(false); });

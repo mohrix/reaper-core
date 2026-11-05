@@ -66,7 +66,7 @@ async function runScan(target, wordlist, options) {
 
     displayTable(finalResults);
     if (options.output) fs.writeFileSync(options.output, JSON.stringify(finalResults, null, 2));
-    if (options.report) { generateHtmlReport(finalResults, options.report); console.log(chalk.green(`\\n[+] Report saved to ${options.report}`)); }
+    if (options.report) { generateHtmlReport(finalResults, options.report); console.log(chalk.green(`\n[+] Report saved to ${options.report}`)); }
 }
 
 module.exports = { runScan };

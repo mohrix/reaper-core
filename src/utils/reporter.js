@@ -11,7 +11,7 @@ function displayTable(finalResults) {
         }
     }
     if (table.length > 0) console.log(table.toString());
-    else console.log(chalk.red("\\n[-] No open ports found."));
+    else console.log(chalk.red("\n[-] No open ports found."));
 }
 
 function generateHtmlReport(finalResults, filename) {
