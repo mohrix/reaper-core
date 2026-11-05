@@ -1,0 +1,21 @@
+{
+  "name": "reaper-core",
+  "version": "4.0.0",
+  "description": "Ultimate Network Reconnaissance & Exploitation Framework",
+  "main": "src/cli.js",
+  "bin": {
+    "reaper": "bin/reaper.js"
+  },
+  "scripts": {
+    "start": "node bin/reaper.js"
+  },
+  "keywords": ["hacking", "pentest", "recon", "rtsp", "rdp", "bruteforce"],
+  "author": "mohrix_dz",
+  "license": "MIT",
+  "dependencies": {
+    "chalk": "^4.1.2",
+    "cli-table3": "^0.6.3",
+    "commander": "^11.1.0",
+    "ora": "^5.4.1"
+  }
+}
