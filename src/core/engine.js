@@ -8,6 +8,19 @@ const { getGeoIP, getReverseDNS } = require('./osint');
 const { scanPort } = require('./scanner');
 const { generateHtmlReport, displayTable } = require('../utils/reporter');
 
+const DEFAULT_PORTS = [21, 22, 23, 80, 443, 3389, 3306, 5432, 554, 5555, 6379, 8080, 8081];
+
+const SCAN_MODES = {
+    rdp: { label: 'RDP', ports: [3389] },
+    cam: { label: 'RTSP', ports: [554] },
+    web: { label: 'HTTP/HTTPS', ports: [80, 443, 8080, 8081] },
+    adb: { label: 'ADB', ports: [5555] },
+};
+
+function resolveScanMode(options) {
+    return Object.keys(SCAN_MODES).find((mode) => options[mode]) || null;
+}
+
 async function runScan(target, wordlist, options) {
     let credsList = [];
     if (wordlist) {
@@ -30,15 +43,28 @@ async function runScan(target, wordlist, options) {
     }
 
     console.log(chalk.magenta(`[*] Total Targets: ${targets.length}`));
-    
-    let portsToScan = [21, 22, 23, 80, 443, 3389, 3306, 5432, 554, 5555, 6379, 8080, 8081];
-    if (options.ports) {
+
+    const activeMode = resolveScanMode(options);
+    const modeConfig = activeMode ? SCAN_MODES[activeMode] : null;
+    let portsToScan = DEFAULT_PORTS.slice();
+
+    if (modeConfig) {
+        if (options.ports) {
+            console.log(chalk.yellow(`[!] Ignoring -p: ${activeMode} mode only scans port(s) ${modeConfig.ports.join(',')}.`));
+        }
+        portsToScan = modeConfig.ports.slice();
+        console.log(chalk.cyan(`[*] Target mode: ${modeConfig.label} only — port(s) ${portsToScan.join(',')}`));
+    } else if (options.ports) {
         portsToScan = options.ports.split(',').map(Number);
     }
 
+    const scanOptions = modeConfig
+        ? { ...options, mode: activeMode, forcedPorts: portsToScan.slice() }
+        : options;
+
     const scanTasks = targets.map(ip => async () => {
         const open = [];
-        const scanPromises = portsToScan.map(p => checkPort(ip, p, parseInt(options.timeout)));
+        const scanPromises = portsToScan.map(p => checkPort(ip, p, parseInt(scanOptions.timeout)));
         const results = await Promise.all(scanPromises);
         results.forEach(p => { if (p) open.push(p); });
         return { ip, open };
@@ -51,17 +77,25 @@ async function runScan(target, wordlist, options) {
     const finalResults = {};
 
     for (const res of scanResults) {
-        if (res.status !== 'fulfilled' || res.value.open.length === 0) continue;
-        const { ip, open } = res.value;
-        finalResults[ip] = {};
+        if (res.status !== 'fulfilled') continue;
 
-        if (options.geo) { const geo = await getGeoIP(ip); if (geo) finalResults[ip]['geo'] = geo; }
-        if (options.rdns) { const rdns = await getReverseDNS(ip); if (rdns) finalResults[ip]['reverse_dns'] = rdns; }
+        const { ip, open } = res.value;
+        if (open.length === 0) {
+            if (modeConfig) console.log(chalk.yellow(`[-] No ${modeConfig.label} service found on ${ip}`));
+            continue;
+        }
+
+        const hostResults = {};
+        if (scanOptions.geo) { const geo = await getGeoIP(ip); if (geo) hostResults.geo = geo; }
+        if (scanOptions.rdns) { const rdns = await getReverseDNS(ip); if (rdns) hostResults.reverse_dns = rdns; }
 
         for (const port of open) {
-            const result = await scanPort(ip, port, options, credsList);
-            finalResults[ip][port] = result;
+            const result = await scanPort(ip, port, scanOptions, credsList);
+            if (result) hostResults[port] = result;
         }
+
+        const serviceEntries = Object.keys(hostResults).filter(key => key !== 'geo' && key !== 'reverse_dns');
+        if (serviceEntries.length > 0) finalResults[ip] = hostResults;
     }
 
     displayTable(finalResults);

@@ -31,9 +31,38 @@ function checkPort(ip, port, timeout = 1500) {
     return new Promise((resolve) => {
         const socket = new net.Socket();
         let resolved = false;
-        const timer = setTimeout(() => { if (!resolved) { resolved = true; socket.destroy(); resolve(null); } }, timeout);
-        socket.connect(port, ip, () => { if (!resolved) { resolved = true; clearTimeout(timer); socket.destroy(); resolve(port); } });
-        socket.on('error', () => { if (!resolved) { resolved = true; clearTimeout(timer); socket.destroy(); resolve(null); } });
+        const timer = setTimeout(() => {
+            if (!resolved) {
+                resolved = true;
+                socket.destroy();
+                resolve(null);
+            }
+        }, timeout);
+
+        socket.connect(port, ip, () => {
+            if (!resolved) {
+                resolved = true;
+                clearTimeout(timer);
+                socket.destroy();
+                resolve(port);
+            }
+        });
+
+        socket.on('error', (err) => {
+            if (!resolved) {
+                resolved = true;
+                clearTimeout(timer);
+                socket.destroy();
+                resolve(null);
+            }
+        });
+
+        socket.on('close', () => {
+            if (!resolved) {
+                resolved = true;
+                clearTimeout(timer);
+            }
+        });
     });
 }
 
@@ -42,9 +71,13 @@ async function runWithConcurrency(tasks, limit) {
     const executing = new Set();
     for (const task of tasks) {
         const p = Promise.resolve().then(() => task());
-        results.push(p); executing.add(p);
+        results.push(p);
+        executing.add(p);
         const clean = () => executing.delete(p);
-        p.then(clean, clean);
+        p.then(clean, clean).catch(err => {
+            // Log error but continue processing other tasks
+            console.error(`Task failed: ${err.message}`);
+        });
         if (executing.size >= limit) await Promise.race(executing);
     }
     return Promise.allSettled(results);

